@@ -18,7 +18,7 @@ def get_pool(images, n):
 
 def conv_and_pool(images, now_filter, next_filter, pixel, shift): #return convoluted and pooled layers
     w_conv = get_variable([pixel, pixel, now_filter, next_filter])
-    h_conv = get_conv(images, w_conv, shift, 'SAME')
+    h_conv = get_conv(images, w_conv, shift, 'VALID')
     b_conv = get_bias([next_filter])
     h_conv_cutoff = tf.nn.relu(h_conv + b_conv)
     h_pool = get_pool(h_conv_cutoff, 2)

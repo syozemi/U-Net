@@ -44,8 +44,8 @@ struct conv {
 	}
 };
 
-const int K = 9;
-int shift[K] = {4, 2, 2, 1, 1, 1, 1, 1, 1};
+const int K = 5;
+int shift[K] = {2, 1, 1, 1, 1};
 vector<conv> ans;
 
 void loop(conv cv) {
@@ -56,9 +56,10 @@ void loop(conv cv) {
 	int p = cv.vec[n - 1];
 	int v = cv.v;
 	for(int i = 3; i <= p; i++) {
-		if((v - i) % shift[n - 1] == 0) {
+		int a = (v - i) / shift[n - 1] + 1;
+		if((v - i) % shift[n - 1] == 0 && a % 2 == 0) {
 			conv res = cv;
-			res.v = (v - i) / shift[n - 1] + 1;
+			res.v = a / 2;
 			res.vec.pb(i);
 			loop(res);
 		}

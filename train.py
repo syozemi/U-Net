@@ -23,27 +23,35 @@ class CNN:
 
     def prepare_model(self):
         with tf.name_scope('input'):
-            x = tf.placeholder(tf.float32, [None, 784])
-            x_image = tf.reshape(x, [-1,28,28,1])
+            x = tf.placeholder(tf.float32, [None, 360 * 360])
+            x_image = tf.reshape(x, [-1,360,360,1])
 
         with tf.name_scope('conv_and_pool1'):
-            num_filters1 = 32
-            h_conv1, h_pool1 = conv_and_pool(x_image, 1, num_filters1, 5, 1)
+            num_filters1 = 1
+            h_conv1, h_pool1 = conv_and_pool(x_image, 1, num_filters1, 10, 2)
 
         with tf.name_scope('conv_and_pool2'):
-            num_filters2 = 64
+            num_filters2 = 2
             h_conv2, h_pool2 = conv_and_pool(h_pool1, num_filters1, num_filters2, 5, 1)
 
-        with tf.name_scope('fully_connected'):
-            final_pixel = 7
-            h_pool2_flat = tf.reshape(h_pool2, [-1, (final_pixel**2)*num_filters2])
+        with tf.name_scope('conv_and_pool3'):
+            num_filters3 = 3
+            h_conv3, h_pool3 = conv_and_pool(h_pool2, num_filters2, num_filters3, 3, 1)
 
-            num_units1 = (final_pixel**2)*num_filters2
+        with tf.name_scope('conv_and_pool4'):
+            num_filters4 = 4
+            h_conv4, h_pool4 = conv_and_pool(h_pool3, num_filters3, num_filters4, 3, 1)
+
+        with tf.name_scope('fully_connected'):
+            final_pixel = 9
+            h_pool_flat = tf.reshape(h_pool4, [-1, (final_pixel**2)*num_filters4])
+
+            num_units1 = (final_pixel**2)*num_filters4
             num_units2 = 1024
 
             w2 = get_variable([num_units1, num_units2])
             b2 = get_bias([num_units2])
-            hidden2 = tf.nn.relu(tf.matmul(h_pool2_flat, w2) + b2)
+            hidden2 = tf.nn.relu(tf.matmul(h_pool_flat, w2) + b2)
 
         with tf.name_scope('dropout'):
             keep_prob = tf.placeholder(tf.float32)
@@ -58,7 +66,7 @@ class CNN:
 
         with tf.name_scope('optimizer'):
             t = tf.placeholder(tf.float32, [None, num_class])
-            loss = -tf.reduce_sum(t * tf.log(p))
+            loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=t,logits=p))
             train_step = tf.train.AdamOptimizer(0.0001).minimize(loss)
             correct_prediction = tf.equal(tf.argmax(p, 1), tf.argmax(t, 1))
             accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
@@ -83,8 +91,8 @@ class CNN:
         summary = tf.summary.merge_all()
 
         saver = tf.train.Saver()
-        shutil.rmtree('/tmp/mnist_sl_logs')
-        writer = tf.summary.FileWriter("/tmp/mnist_sl_logs", sess.graph)
+        shutil.rmtree('/tmp/logs')
+        writer = tf.summary.FileWriter("/tmp/logs", sess.graph)
         
         self.sess = sess
         self.summary = summary
@@ -98,23 +106,14 @@ cnn = CNN()
 i = 0
 for _ in range(20000):
     i += 1
-    batch_xs, batch_ts = mnist.train.next_batch(50)
     cnn.sess.run(cnn.train_step,
-             feed_dict={cnn.x:batch_xs, cnn.t:batch_ts, cnn.keep_prob:0.5})
-    if i % 10 == 0:
-        loss_vals, acc_vals = [], []
-        for c in range(4):
-            start = int(len(mnist.test.labels) / 4 * c)
-            end = int(len(mnist.test.labels) / 4 * (c+1))
-            summary, loss_val, acc_val = cnn.sess.run([cnn.summary, cnn.loss, cnn.accuracy],
-                feed_dict={cnn.x:mnist.test.images[start:end],
-                           cnn.t:mnist.test.labels[start:end],
+             feed_dict={cnn.x:train_x, cnn.t:train_t, cnn.keep_prob:0.5})
+    if i % 1 == 0:
+        summary, loss_val, acc_val = cnn.sess.run([cnn.summary, cnn.loss, cnn.accuracy],
+                feed_dict={cnn.x:train_x,
+                           cnn.t:train_t,
                            cnn.keep_prob:1.0})
-            loss_vals.append(loss_val)
-            acc_vals.append(acc_val)
-        loss_val = np.sum(loss_vals)
-        acc_val = np.mean(acc_vals)
         print ('Step: %d, Loss: %f, Accuracy: %f'
                % (i, loss_val, acc_val))
-        cnn.saver.save(cnn.sess, os.path.join(os.getcwd(), 'cnn_session'), global_step=i)
+        # cnn.saver.save(cnn.sess, os.path.join(os.getcwd(), 'cnn_session'), global_step=i)
         cnn.writer.add_summary(summary, i)
