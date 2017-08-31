@@ -83,27 +83,28 @@ class UNET: #画像はテストデータラベルともにフラットにして�
         with tf.name_scope('softmax'):
             h_pool_flat = tf.reshape(h_pool, [-1, num_class])
 
-            p = tf.nn.softmax(h_pool_flat)
+            result = tf.nn.softmax(h_pool_flat)
 
         with tf.name_scope('optimizer'):
             t = tf.placeholder(tf.float32, [None, input_size * input_size, num_class])
             tr = tf.reshape(t, [-1, input_size, input_size, num_class])
             tcrop = get_crop(tr, [output_size, output_size])
             tout = tf.reshape(tcrop, [-1, num_class])
-            loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=tout,logits=p))
+            loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=tout,logits=result))
             train_step = tf.train.AdamOptimizer(0.0001).minimize(loss)
 
         with tf.name_scope('evaluator'):
-            correct_prediction = tf.equal(tf.argmax(p, 1), tf.argmax(tout, 1))
+            correct_prediction = tf.equal(tf.argmax(result, 1), tf.argmax(tout, 1))
             accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
         tf.summary.scalar("loss", loss)
         tf.summary.scalar("accuracy", accuracy)
         
-        self.x, self.t, self.p = x, t, p
+        self.x, self.t, self.result = x, t, result
         self.train_step = train_step
         self.loss = loss
         self.tout = tout
+        self.result = result
         self.accuracy = accuracy
 
     def prepare_session(self):
@@ -124,7 +125,7 @@ class UNET: #画像はテストデータラベルともにフラットにして�
 unet = UNET()
 
 i = 0
-for _ in range(0):
+for _ in range(50):
     i += 1
     unet.sess.run(unet.train_step,
              feed_dict={unet.x:image_x, unet.t:image_t})
@@ -137,21 +138,23 @@ for _ in range(0):
         # unet.saver.save(unet.sess, os.path.join(os.getcwd(), 'unet_session'), global_step=i)
         unet.writer.add_summary(summary, i)
 
-tout = np.array(unet.sess.run([unet.tout], feed_dict = {unet.x:image_x, unet.t:image_t}))
-tout = tout.reshape(5, 388 * 388, 2)
-print (tout.shape)
-timage = np.zeros(5 * 388 * 388 * 2).reshape(5, 388 * 388, 2)
+timage = np.array(unet.sess.run([unet.tout], feed_dict = {unet.x:image_x, unet.t:image_t}))
+timage = timage.reshape(5, 388, 388, 2)
+result = np.array(unet.sess.run([unet.result], feed_dict = {unet.x:image_x, unet.t:image_t}))
+result = result.reshape(5, 388, 388, 2)
+result_image = np.zeros(5 * 388 * 388 * 2).reshape(5, 388, 388, 2)
 for i in range(5):
-    for j in range(388 * 388):
-        if(tout[i][j][0] < tout[i][j][1]):
-            timage[i][j][0] = 1
-        else:
-            timage[i][j][1] = 1
+    for j in range(388):
+        for k in range(388):
+            if result[i][j][k][0] < result[i][j][k][1]:
+                result_image[i][j][k][0] = 1
+            else:
+                result_image[i][j][k][1] = 1
 
 fig = plt.figure(figsize = (1, 2))
 subplot = fig.add_subplot(1, 2, 1)
-subplot.imshow(image_t[0,...,0].reshape(572, 572))
+subplot.imshow(timage[0,...,0])
 subplot = fig.add_subplot(1, 2, 2)
-subplot.imshow(timage[0,...,0].reshape(388, 388))
+subplot.imshow(result_image[0,...,0])
 
 plt.show()
