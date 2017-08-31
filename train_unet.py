@@ -4,37 +4,42 @@ import os
 import matplotlib.pyplot as plt
 import pickle
 import shutil
-from libs import (get_variable, get_conv, get_bias, get_pool, conv_and_pool)
+from collections import OrderedDict
+from libs import (get_variable, get_conv, get_bias, get_pool, get_crop, get_concat, get_deconv2)
 
 
 
-with open('', 'rb') as f:
-    image = pickle.load(f)
+with open('data/train_x', 'rb') as f:
+    image_x = pickle.load(f)
 
-with open('data/ncratio10', 'rb') as f:
-    ncratio10 = pickle.load(f)
+with open('data/train_t', 'rb') as f:
+    image_t = pickle.load(f)
 
 
 
-class CNN:
+class UNET: #画像はテストデータラベルともにフラットにして入力
     def __init__(self):
         with tf.Graph().as_default():
             self.prepare_model()
             self.prepare_session()
 
     def prepare_model(self):
+        input_size = 572   #input_size % 16 == 12ののものなら何でもよい
+        output_size = input_size - 184
+        #テストデータ[-1, 572 * 572]
+        #ラベル[-1, 572 * 572, 2]
         with tf.name_scope('input'):
-            x = tf.placeholder(tf.float32, [None, 572 * 572])
-            h_pool = tf.reshape(x, [-1,572,572,1])
+            x = tf.placeholder(tf.float32, [None, input_size * input_size])
+            h_pool = tf.reshape(x, [-1,input_size,input_size,1])
 
         with tf.name_scope('contracting'):
             layers = 4
-            b = 20
+            b = 2  #層を多くする。論文は64でやってる。
             num_class = 2
             h_array = OrderedDict()
 
-            x = tf.placeholder(tf.float32, [None, 572 * 572])
-            h_pool = tf.reshape(x, [-1, 572, 572, 1])
+            x = tf.placeholder(tf.float32, [None, input_size * input_size])
+            h_pool = tf.reshape(x, [-1, input_size, input_size, 1])
 
             for i in range(layers):
                 if i == 0:
@@ -58,7 +63,7 @@ class CNN:
             h_pool = get_conv(h5_1, filter5_2, 1, 'VALID')
 
 
-        with tf.name_scope('expanding')
+        with tf.name_scope('expanding'):
             for i in range(layers):
                 filter5 = get_variable([2, 2, b // 2, b])
                 h3 = get_deconv2(h_pool, filter5)
@@ -75,46 +80,30 @@ class CNN:
             filter1_3 = get_variable([1, 1, b, num_class])
             h_pool = get_conv(h_pool, filter1_3, 1, 'VALID') 
 
-        # with tf.name_scope('fully_connected'):
-        #     h_pool_flat = tf.reshape(h_pool, [-1, 2 * 388 * 388])
-        #
-        #     num_units1 = 2 * 388 * 388
-        #     num_units2 = 388 * 388
-        #
-        #     w2 = get_variable([num_units1, num_units2])
-        #     b2 = get_bias([num_units2])
-        #     hidden2 = tf.nn.relu(tf.matmul(h_pool_flat, w2) + b2)
-        #
-        # with tf.name_scope('dropout'):
-        #     keep_prob = tf.placeholder(tf.float32)
-        #     hidden2_drop = tf.nn.dropout(hidden2, keep_prob)
-        #
-        # with tf.name_scope('softmax'):
-        #     num_class = 10
-        #
-        #     w0 = get_variable([num_units2, num_class])
-        #     b0 = get_bias([num_class])
-        #     p = tf.nn.softmax(tf.matmul(hidden2_drop, w0) + b0)
-        #
+        with tf.name_scope('softmax'):
+            h_pool_flat = tf.reshape(h_pool, [-1, num_class])
+
+            p = tf.nn.softmax(h_pool_flat)
+
         with tf.name_scope('optimizer'):
-            t = tf.placeholder(tf.float32, [None, num_class])
-            loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=t,logits=p))
+            t = tf.placeholder(tf.float32, [None, input_size * input_size, num_class])
+            tr = tf.reshape(t, [-1, input_size, input_size, num_class])
+            tcrop = get_crop(tr, [output_size, output_size])
+            tout = tf.reshape(tcrop, [-1, num_class])
+            loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=tout,logits=p))
             train_step = tf.train.AdamOptimizer(0.0001).minimize(loss)
-            correct_prediction = tf.equal(tf.argmax(p, 1), tf.argmax(t, 1))
-            accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
         with tf.name_scope('evaluator'):
-            correct_prediction = tf.equal(tf.argmax(p, 1), tf.argmax(t, 1))
+            correct_prediction = tf.equal(tf.argmax(p, 1), tf.argmax(tout, 1))
             accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
         tf.summary.scalar("loss", loss)
         tf.summary.scalar("accuracy", accuracy)
-        tf.summary.histogram("convolution_filters1", h_conv1)
-        tf.summary.histogram("convolution_filters2", h_conv2)
         
-        self.x, self.t, self.p, self.keep_prob = x, t, p, keep_prob
+        self.x, self.t, self.p = x, t, p
         self.train_step = train_step
         self.loss = loss
+        self.tout = tout
         self.accuracy = accuracy
 
     def prepare_session(self):
@@ -132,19 +121,37 @@ class CNN:
         self.writer = writer
         self.saver = saver
 
-cnn = CNN()
+unet = UNET()
 
 i = 0
-for _ in range(100):
+for _ in range(0):
     i += 1
-    cnn.sess.run(cnn.train_step,
-             feed_dict={cnn.x:image, cnn.t:ncratio10, cnn.keep_prob:0.1})
-    if i % 1 == 0:
-        summary, loss_val, acc_val = cnn.sess.run([cnn.summary, cnn.loss, cnn.accuracy],
-                feed_dict={cnn.x:image,
-                           cnn.t:ncratio10,
-                           cnn.keep_prob:1.0})
+    unet.sess.run(unet.train_step,
+             feed_dict={unet.x:image_x, unet.t:image_t})
+    if i % 10 == 0:
+        summary, loss_val, acc_val = unet.sess.run([unet.summary, unet.loss, unet.accuracy],
+                feed_dict={unet.x:image_x,
+                           unet.t:image_t})
         print ('Step: %d, Loss: %f, Accuracy: %f'
                % (i, loss_val, acc_val))
-        # cnn.saver.save(cnn.sess, os.path.join(os.getcwd(), 'cnn_session'), global_step=i)
-        cnn.writer.add_summary(summary, i)
+        # unet.saver.save(unet.sess, os.path.join(os.getcwd(), 'unet_session'), global_step=i)
+        unet.writer.add_summary(summary, i)
+
+tout = np.array(unet.sess.run([unet.tout], feed_dict = {unet.x:image_x, unet.t:image_t}))
+tout = tout.reshape(5, 388 * 388, 2)
+print (tout.shape)
+timage = np.zeros(5 * 388 * 388 * 2).reshape(5, 388 * 388, 2)
+for i in range(5):
+    for j in range(388 * 388):
+        if(tout[i][j][0] < tout[i][j][1]):
+            timage[i][j][0] = 1
+        else:
+            timage[i][j][1] = 1
+
+fig = plt.figure(figsize = (1, 2))
+subplot = fig.add_subplot(1, 2, 1)
+subplot.imshow(image_t[0,...,0].reshape(572, 572))
+subplot = fig.add_subplot(1, 2, 2)
+subplot.imshow(timage[0,...,0].reshape(388, 388))
+
+plt.show()

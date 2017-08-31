@@ -21,12 +21,18 @@ def get_deconv2(images, _filter):
     output_shape = tf.stack([x_shape[0], x_shape[1] * 2, x_shape[2] * 2, x_shape[3] // 2])
     return tf.nn.conv2d_transpose(images, _filter, output_shape, strides = [1, 2, 2, 1], padding = 'VALID')
 
+def get_crop(images, shape): #imagesをshapeのサイズに真ん中で切り抜く
+    x_shape = tf.shape(images)
+    size = [-1, shape[0], shape[1], -1]
+    offsets = [0, (x_shape[1] - size[1]) // 2, (x_shape[2] - size[2]) // 2, 0]
+    return tf.slice(images, offsets, size)
+
+
 def get_concat(images1, images2): #x1 should be bigger
     x1_shape = tf.shape(images1)
     x2_shape = tf.shape(images2)
-    offsets = [0, (x1_shape[1] - x2_shape[1]) // 2, (x1_shape[2] - x2_shape[2]) // 2, 0]
-    size = [-1, x2_shape[1], x2_shape[2], -1]
-    images1_crop = tf.slice(images1, offsets, size)
+    shape = [x2_shape[1], x2_shape[2]]
+    images1_crop = get_crop(images1, shape)
     return tf.concat([images1_crop, images2], 3)  
     
 
