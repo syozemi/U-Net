@@ -6,13 +6,7 @@ import pickle
 import shutil
 from libs import (get_variable, get_conv, get_bias, get_pool, conv_and_pool)
 
-'''
-with open('train_x.data', mode='rb') as f:
-    train_x = pickle.load(f)
 
-with open('train_t.data', mode='rb') as f:
-    train_t = pickle.load(f)
-'''
 
 with open('data/image', 'rb') as f:
     image = pickle.load(f)

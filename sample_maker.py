@@ -7,16 +7,15 @@ import matplotlib.pyplot as plt
 import pickle
 from tensorflow.examples.tutorials.mnist import input_data
 
-train_x = np.abs(np.random.normal(0.0, 1.0, 5 * 360 * 363)).reshape(5, 360 * 363)
-train_t = np.zeros(5 * 100).reshape(5, 100)
+batch_size = 100
+
+train_x = np.random.rand(batch_size * 360 * 360).reshape(batch_size, 360 * 360)
+train_t = np.zeros(batch_size * 10).reshape(batch_size, 10)
 
 
-for i in range(5):
-    while True:
-        a = np.abs(np.random.normal(0.0, 1.0))
-        if a < 1: 
-            break
-    train_t[i][int(a * 100)] = 1
+for i in range(batch_size):
+    a = np.random.rand()
+    train_t[i][int(a * 10)] = 1
 
 print (train_x, train_t)
 
