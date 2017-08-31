@@ -16,32 +16,32 @@ with open('data/train_t', 'rb') as f:
     image_t = pickle.load(f)
 
 
+input_size = 572   #input_size % 16 == 12ののものなら何でもよい
+output_size = input_size - 184
+num_class = 2
 
 class UNET: #画像はテストデータラベルともにフラットにして入力
+    #テストデータ[-1, 572 * 572]
+    #ラベル[-1, 572 * 572, 2]
     def __init__(self):
         with tf.Graph().as_default():
             self.prepare_model()
             self.prepare_session()
 
     def prepare_model(self):
-        input_size = 572   #input_size % 16 == 12ののものなら何でもよい
-        output_size = input_size - 184
-        #テストデータ[-1, 572 * 572]
-        #ラベル[-1, 572 * 572, 2]
         with tf.name_scope('input'):
             x = tf.placeholder(tf.float32, [None, input_size * input_size])
             h_pool = tf.reshape(x, [-1,input_size,input_size,1])
 
         with tf.name_scope('contracting'):
-            layers = 4
+            depth = 4
             b = 2  #層を多くする。論文は64でやってる。
-            num_class = 2
             h_array = OrderedDict()
 
             x = tf.placeholder(tf.float32, [None, input_size * input_size])
             h_pool = tf.reshape(x, [-1, input_size, input_size, 1])
 
-            for i in range(layers):
+            for i in range(depth):
                 if i == 0:
                     filter1 = get_variable([3, 3, 1, b])
                 else:
@@ -64,7 +64,7 @@ class UNET: #画像はテストデータラベルともにフラットにして�
 
 
         with tf.name_scope('expanding'):
-            for i in range(layers):
+            for i in range(depth):
                 filter5 = get_variable([2, 2, b // 2, b])
                 h3 = get_deconv2(h_pool, filter5)
 
@@ -125,7 +125,7 @@ class UNET: #画像はテストデータラベルともにフラットにして�
 unet = UNET()
 
 i = 0
-for _ in range(50):
+for _ in range(100):
     i += 1
     unet.sess.run(unet.train_step,
              feed_dict={unet.x:image_x, unet.t:image_t})
@@ -139,17 +139,16 @@ for _ in range(50):
         unet.writer.add_summary(summary, i)
 
 timage = np.array(unet.sess.run([unet.tout], feed_dict = {unet.x:image_x, unet.t:image_t}))
-timage = timage.reshape(5, 388, 388, 2)
+timage = timage.reshape(-1, output_size, output_size, num_class)
 result = np.array(unet.sess.run([unet.result], feed_dict = {unet.x:image_x, unet.t:image_t}))
-result = result.reshape(5, 388, 388, 2)
-result_image = np.zeros(5 * 388 * 388 * 2).reshape(5, 388, 388, 2)
-for i in range(5):
-    for j in range(388):
-        for k in range(388):
-            if result[i][j][k][0] < result[i][j][k][1]:
-                result_image[i][j][k][0] = 1
-            else:
-                result_image[i][j][k][1] = 1
+result = result.reshape(-1, output_size, output_size, num_class)
+result_image = np.zeros(result.size).reshape(-1, output_size, output_size, num_class)
+
+for i in range(len(result)):
+    for j in range(output_size):
+        for k in range(output_size):
+            at = np.argmax(result[i][j][k])
+            result_image[i][j][k][at] = 1
 
 fig = plt.figure(figsize = (1, 2))
 subplot = fig.add_subplot(1, 2, 1)
