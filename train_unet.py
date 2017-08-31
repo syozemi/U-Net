@@ -30,6 +30,7 @@ class CNN:
         with tf.name_scope('contracting'):
             layers = 4
             b = 20
+            num_class = 2
             h_array = OrderedDict()
 
             x = tf.placeholder(tf.float32, [None, 572 * 572])
@@ -71,7 +72,7 @@ class CNN:
 
                 b = b // 2
 
-            filter1_3 = get_variable([1, 1, b, 2])
+            filter1_3 = get_variable([1, 1, b, num_class])
             h_pool = get_conv(h_pool, filter1_3, 1, 'VALID') 
 
         # with tf.name_scope('fully_connected'):
