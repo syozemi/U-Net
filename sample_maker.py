@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import pickle
 from tensorflow.examples.tutorials.mnist import input_data
 
-#for CNN
+# for CNN
 # batch_size = 100
 #
 # train_x = np.random.rand(batch_size * 360 * 360).reshape(batch_size, 360 * 360)
@@ -47,6 +47,9 @@ for i in range(batch_size):
 print (train_x.shape)
 print (train_t)
 print (train_t.shape)
+
+train_x = train_x.reshape(batch_size, input_size, input_size)
+train_t = train_t.reshape(batch_size, input_size, input_size, num_class)
 
 with open('data/train_x', mode = 'wb') as f:
     pickle.dump(train_x, f)

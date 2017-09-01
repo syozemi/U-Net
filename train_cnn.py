@@ -24,7 +24,7 @@ class CNN:
 
     def prepare_model(self):
         with tf.name_scope('input'):
-            x = tf.placeholder(tf.float32, [None, 360 * 360])
+            x = tf.placeholder(tf.float32, [None, 360, 360])
             x_image = tf.reshape(x, [-1,360,360,1])
 
         with tf.name_scope('conv_and_pool1'):
