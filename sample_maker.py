@@ -20,10 +20,10 @@ from tensorflow.examples.tutorials.mnist import input_data
 #
 # print (train_x, train_t)
 #
-# with open('train_x.data', mode='wb') as f:
+# with open('data/train_x', mode='wb') as f:
 #     pickle.dump(train_x, f)
 #
-# with open('train_t.data', mode='wb') as f:
+# with open('data/train_t', mode='wb') as f:
 #     pickle.dump(train_t, f)
 
 #for UNET

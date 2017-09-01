@@ -8,8 +8,8 @@ import batch
 from collections import OrderedDict
 from libs import (get_variable, get_conv, get_bias, get_pool, get_crop, get_concat, get_deconv2)
 
-np.random.seed(191919)
-tf.set_random_seed(191919)
+np.random.seed(1919114)
+tf.set_random_seed(1919114)
 
 
 with open('data/image572', 'rb') as f:
@@ -37,7 +37,7 @@ class UNET: #画像はテストデータラベルともにフラットにして�
 
         with tf.name_scope('contracting'):
             depth = 4
-            b = 4  #層を多くする。論文は64でやってる。
+            b = 8  #層を多くする。論文は64でやってる。
             h_array = OrderedDict()
 
             for i in range(depth):
@@ -91,11 +91,10 @@ class UNET: #画像はテストデータラベルともにフラットにして�
 
         with tf.name_scope('optimizer'):
             t = tf.placeholder(tf.float32, [None, input_size, input_size, num_class])
-            tr = tf.reshape(t, [-1, input_size, input_size, num_class])
-            tcrop = get_crop(tr, [output_size, output_size])
+            tcrop = get_crop(t, [output_size, output_size])
             tout = tf.reshape(tcrop, [-1, num_class])
             loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=tout,logits=result))
-            train_step = tf.train.AdamOptimizer(0.005).minimize(loss)
+            train_step = tf.train.AdamOptimizer(0.0001).minimize(loss)
 
         with tf.name_scope('evaluator'):
             correct_prediction = tf.equal(tf.argmax(result, 1), tf.argmax(tout, 1))
@@ -145,7 +144,7 @@ for _ in range(1000):
                            unet.keep_prob:1.0})
         print ('Step: %d, Loss: %f, Accuracy: %f'
                % (i, loss_val, acc_val))
-        # unet.saver.save(unet.sess, os.path.join(os.getcwd(), 'unet_session'), global_step=i)
+        unet.saver.save(unet.sess, os.path.join(os.getcwd(), 'saver/unet_session'), global_step=i)
         unet.writer.add_summary(summary, i)
 
 timage = np.array(unet.sess.run([unet.tout], feed_dict = {unet.x:image_x, unet.t:image_t, unet.keep_prob:1.0}))
