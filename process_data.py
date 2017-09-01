@@ -53,7 +53,7 @@ def save_array(z, name):
 #画像をグレースケールに変換。
 def rgb2gray(rgb):
     gray = np.dot(rgb, [0.299, 0.587, 0.114])
-    gray = gray / 256.0
+    gray = gray / 255.0
     return gray
 
 #まとめてグレースケールに変換。

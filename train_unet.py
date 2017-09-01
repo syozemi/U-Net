@@ -15,7 +15,7 @@ tf.set_random_seed(1919114)
 with open('data/image572', 'rb') as f:
     image_x = pickle.load(f)
 
-with open('data/cell_label', 'rb') as f:
+with open('data/nucleus_label', 'rb') as f:
     image_t = pickle.load(f)
 
 input_size = 572   #input_size % 16 == 12ののものなら何でもよい
@@ -94,7 +94,7 @@ class UNET: #画像はテストデータラベルともにフラットにして�
             tcrop = get_crop(t, [output_size, output_size])
             tout = tf.reshape(tcrop, [-1, num_class])
             loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=tout,logits=result))
-            train_step = tf.train.AdamOptimizer(0.0001).minimize(loss)
+            train_step = tf.train.MomentumOptimizer(learning_rate = 0.02, momentum = 0.02).minimize(loss)
 
         with tf.name_scope('evaluator'):
             correct_prediction = tf.equal(tf.argmax(result, 1), tf.argmax(tout, 1))
@@ -131,7 +131,7 @@ i = 0
 Batch_x = batch.Batch(image_x)
 Batch_t = batch.Batch(image_t)
 
-for _ in range(1000):
+for _ in range(5000):
     i += 1
     batch_x = Batch_x.next_batch(10)
     batch_t = Batch_t.next_batch(10)
