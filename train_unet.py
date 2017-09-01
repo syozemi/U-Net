@@ -15,7 +15,7 @@ tf.set_random_seed(1919114)
 with open('data/image572', 'rb') as f:
     image_x = pickle.load(f)
 
-with open('data/nucleus_label', 'rb') as f:
+with open('data/cell_label', 'rb') as f:
     image_t = pickle.load(f)
 
 input_size = 572   #input_size % 16 == 12ののものなら何でもよい
