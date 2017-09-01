@@ -30,26 +30,26 @@ from tensorflow.examples.tutorials.mnist import input_data
 batch_size = 5
 num_class = 2
 
-input_size = 572
-train_x = np.random.rand(batch_size * input_size * input_size).reshape(
-        batch_size, input_size * input_size)
+input_sizex = 572
+input_sizey = 588
+train_x = np.random.rand(batch_size * input_sizex * input_sizey).reshape(
+        batch_size, input_sizex, input_sizey)
 
-train_t = np.zeros(batch_size * (input_size**2) * num_class).reshape(batch_size, input_size * input_size, num_class)
+train_t = np.zeros(batch_size * input_sizex * input_sizey * num_class).reshape(batch_size, input_sizex, input_sizey, num_class)
 
 for i in range(batch_size):
-    for j in range(input_size * input_size):
-        if np.sign(np.random.rand() - 0.5) >= 0:
-            train_t[i][j][0] = 1
-        else:
-            train_t[i][j][1] = 1
+    for j in range(input_sizex):
+        for k in range(input_sizey):
+            if np.sign(np.random.rand() - 0.5) >= 0:
+                train_t[i][j][k][0] = 1
+            else:
+                train_t[i][j][k][1] = 1
 
 
 print (train_x.shape)
 print (train_t)
 print (train_t.shape)
 
-train_x = train_x.reshape(batch_size, input_size, input_size)
-train_t = train_t.reshape(batch_size, input_size, input_size, num_class)
 
 with open('data/train_x', mode = 'wb') as f:
     pickle.dump(train_x, f)

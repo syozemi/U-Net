@@ -12,19 +12,21 @@ np.random.seed(1919114)
 tf.set_random_seed(1919114)
 
 
-with open('data/image572', 'rb') as f:
+with open('data/train_x', 'rb') as f:
     image_x = pickle.load(f)
 
-with open('data/nucleus_label', 'rb') as f:
+with open('data/train_t', 'rb') as f:
     image_t = pickle.load(f)
 
-input_size = 572   #input_size % 16 == 12ののものなら何でもよい
-output_size = input_size - 184
+input_sizex = 572   #input_sizex % 16 == 12ののものなら何でもよい
+input_sizey = 588   #こっちも
+output_sizex = input_sizex - 184
+output_sizey = input_sizey - 184
 num_class = 2
 
 class UNET: #画像はテストデータラベルともにフラットにして入力
-    #テストデータ[-1, 572, 572]
-    #ラベル[-1, 572, 572, 2]
+    #テストデータ[-1, input_sizex, input_sizey]
+    #ラベル[-1, input_sizex, input_sizey, 2]
     def __init__(self):
         with tf.Graph().as_default():
             self.prepare_model()
@@ -32,8 +34,8 @@ class UNET: #画像はテストデータラベルともにフラットにして�
 
     def prepare_model(self):
         with tf.name_scope('input'):
-            x = tf.placeholder(tf.float32, [None, input_size, input_size])
-            h_pool = tf.reshape(x, [-1,input_size,input_size,1])
+            x = tf.placeholder(tf.float32, [None, input_sizex, input_sizey])
+            h_pool = tf.reshape(x, [-1, input_sizex, input_sizey, 1])
 
         with tf.name_scope('contracting'):
             depth = 4
@@ -90,8 +92,8 @@ class UNET: #画像はテストデータラベルともにフラットにして�
             result = tf.nn.softmax(h_pool_flat)
 
         with tf.name_scope('optimizer'):
-            t = tf.placeholder(tf.float32, [None, input_size, input_size, num_class])
-            tcrop = get_crop(t, [output_size, output_size])
+            t = tf.placeholder(tf.float32, [None, input_sizex, input_sizey, num_class])
+            tcrop = get_crop(t, [output_sizex, output_sizey])
             tout = tf.reshape(tcrop, [-1, num_class])
             loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=tout,logits=result))
             train_step = tf.train.MomentumOptimizer(learning_rate = 0.02, momentum = 0.02).minimize(loss)
@@ -131,7 +133,7 @@ i = 0
 Batch_x = batch.Batch(image_x)
 Batch_t = batch.Batch(image_t)
 
-for _ in range(5000):
+for _ in range(1):
     i += 1
     batch_x = Batch_x.next_batch(10)
     batch_t = Batch_t.next_batch(10)
@@ -148,14 +150,14 @@ for _ in range(5000):
         unet.writer.add_summary(summary, i)
 
 timage = np.array(unet.sess.run([unet.tout], feed_dict = {unet.x:image_x, unet.t:image_t, unet.keep_prob:1.0}))
-timage = timage.reshape(-1, output_size, output_size, num_class)
+timage = timage.reshape(-1, output_sizex, output_sizey, num_class)
 result = np.array(unet.sess.run([unet.result], feed_dict = {unet.x:image_x, unet.t:image_t, unet.keep_prob:1.0}))
-result = result.reshape(-1, output_size, output_size, num_class)
-result_image = np.zeros(result.size).reshape(-1, output_size, output_size, num_class)
+result = result.reshape(-1, output_sizex, output_sizey, num_class)
+result_image = np.zeros(result.size).reshape(-1, output_sizex, output_sizey, num_class)
 
 for i in range(len(result)):
-    for j in range(output_size):
-        for k in range(output_size):
+    for j in range(output_sizex):
+        for k in range(output_sizey):
             at = np.argmax(result[i][j][k])
             result_image[i][j][k][at] = 1
 
