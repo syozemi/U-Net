@@ -19,10 +19,10 @@ else:
     files = os.listdir('band/')
 
     for file in files:
-        if '.bmp' in file:
+        if '.jpg' in file:
             image_path = 'band/' + file
-            cell_path = 'band/' + file.replace('.bmp', '.0.png')
-            nucleus_path = 'band/' + file.replace('.bmp', '.1.png')
+            cell_path = 'band/' + file.replace('.jpg', '.mask.0.png')
+            nucleus_path = 'band/' + file.replace('.jpg', '.mask.1.png')
 
             image_array = processer.img_to_np(image_path)
             cell_array = processer.img_to_np(cell_path)

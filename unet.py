@@ -104,16 +104,16 @@ class UNET:
                 filter1_3 = get_variable([1, 1, layers, num_class])
                 h_pool = get_conv(h_pool, filter1_3, 1, 'VALID') 
 
-                h_pool_flat = tf.reshape(h_pool, [-1, num_class])
+                result_logits = tf.reshape(h_pool, [-1, num_class])
 
-                result = tf.nn.softmax(h_pool_flat)
+                result = tf.nn.softmax(result_logits)
 
         with tf.name_scope('optimizer'):
             with tf.device('/gpu:1'):
                     t = tf.placeholder(tf.float32, [None, input_sizex, input_sizey, num_class])
                     tcrop = get_crop(t, [output_sizex, output_sizey])
                     tout = tf.reshape(tcrop, [-1, num_class])
-                    loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=tout,logits=result))
+                    loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=tout,logits=result_logits))
                     train_step = tf.train.MomentumOptimizer(learning_rate = 0.02, momentum = 0.02).minimize(loss)
 
         with tf.name_scope('evaluator'):
