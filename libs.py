@@ -5,7 +5,7 @@ np.random.seed(20160704)
 tf.set_random_seed(20160704)
 
 def get_variable(shape):
-    return tf.Variable(tf.truncated_normal(shape, stddev = 0.1))
+    return tf.Variable(tf.truncated_normal(shape, stddev = 0.01))
 
 def get_conv(images, _filter, shift, padding):
     return tf.nn.conv2d(images, _filter, strides = [1, shift, shift, 1], padding = padding)
