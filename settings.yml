@@ -1,6 +1,6 @@
 # コメント書いたのGsanじゃなくて石部なのでコメント内容間違ってる可能性あり
 # 訓練用データ数
-num_data: 50
+num_data: 100
 # トレーニング用データ数
 num_test: 25
 # 画像の大きさ
@@ -20,3 +20,11 @@ learnig_times: 1000
 keep_prob: 0.1
 # tensorboardで何枚画像を表示するか
 num_image: 4
+# 将来的に使う予定
+# 学習時にどの種類のデータを使うかを指定できる
+# 使うものはvalid使わないものはinvalid
+effective_image:
+  # 元のデータ
+  original: valid
+  # 回転したデータ
+  rotate: invalid

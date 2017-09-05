@@ -24,7 +24,6 @@ with open('data/nucleus_label', 'rb') as f:
 image_x, image_t = batch.shuffle_image(image_x, image_t)
 
 #後で消す
-print(len(image_x))
 num_data = settings["num_data"] ##訓練用データ数
 num_test = settings["num_test"]
 train_x = image_x[:num_data]
