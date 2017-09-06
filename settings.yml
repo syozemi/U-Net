@@ -3,7 +3,7 @@
 # 訓練用データ数
 num_data: 300
 # テスト用データ数
-num_test: 50
+num_test: 20
 # 画像の大きさ
 input_sizex: 572
 input_sizey: 572
@@ -16,7 +16,7 @@ layers_default: 8
 # バッチ数
 Batch_num: 20
 # 学習回数
-learning_times: 1000
+learning_times: 300
 # 学習時何割くらいドロップアウトさせるか
 keep_prob: 0.1
 # tensorboardで何枚画像を表示するか

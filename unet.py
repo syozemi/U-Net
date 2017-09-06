@@ -113,7 +113,8 @@ class UNET:
                     t = tf.placeholder(tf.float32, [None, input_sizex, input_sizey, num_class])
                     tcrop = get_crop(t, [output_sizex, output_sizey])
                     tout = tf.reshape(tcrop, [-1, num_class])
-                    loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=tout,logits=result_logits))
+                    loss = -tf.reduce_mean(tout * tf.log(tf.clip_by_value(result, 1e-10, 1.0)))
+                    # loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=tout,logits=result_logits))
                     train_step = tf.train.MomentumOptimizer(learning_rate = 0.02, momentum = 0.02).minimize(loss)
 
         with tf.name_scope('evaluator'):
