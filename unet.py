@@ -123,7 +123,7 @@ class UNET:
 
         tf.summary.scalar("loss", loss)
         tf.summary.scalar("accuracy", accuracy)
-        tf.summary.histogram("result", result[...,1])
+        # tf.summary.histogram("result", result[...,1])
         
         self.x, self.t, self.result, self.keep_prob = x, t, result, keep_prob
         self.train_step = train_step

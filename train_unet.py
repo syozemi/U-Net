@@ -12,7 +12,7 @@ import unet #UNETをimportします
 # tf.set_random_seed(1919114)
 
 # yaml形式の設定を読み込む
-f = open("../U-Net_Gsan/settings.yml", encoding='UTF-8')
+f = open("settings.yml", encoding='UTF-8')
 settings = yaml.load(f)
 
 with open('data/image572', 'rb') as f:
@@ -41,7 +41,7 @@ Batch_num = settings["Batch_num"] ##バッチ数
 
 
 i = 0
-for _ in range(settings["learnig_times"]): ##学習回数
+for _ in range(settings["learning_times"]): ##学習回数
     i += 1
     batch_x = Batch_x.next_batch(Batch_num)
     batch_t = Batch_t.next_batch(Batch_num)
