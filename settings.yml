@@ -16,8 +16,8 @@ layers_default: 8
 # バッチ数
 Batch_num: 20
 # 学習回数
-learning_times: 300
+learning_times: 10000
 # 学習時何割くらいドロップアウトさせるか
-keep_prob: 0.1
+keep_prob: 0.5
 # tensorboardで何枚画像を表示するか
 num_image: 4
