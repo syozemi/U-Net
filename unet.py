@@ -13,13 +13,15 @@ class UNET:
     #初期化はinput_sizex, input_sizey, num_classは必ず指定、depthとかは"depth ="で行う 
     #input_sizex, input_sizeyを変に設定するとpoolで死ぬ可能性あり。
 
-    def __init__(self, input_sizex , input_sizey, num_class, depth = 4, layers_default = 8):
+    def __init__(self, input_sizex , input_sizey, mask_sizex, mask_sizey, num_class, depth = 4, layers_default = 8):
         with tf.Graph().as_default():
 
             self.depth = depth
             self.layers_default = layers_default
             self.input_sizex = input_sizex
             self.input_sizey = input_sizey
+            self.mask_sizex = mask_sizex
+            self.mask_sizey = mask_sizey
             self.num_class = num_class
 
             self.prepare_model()
@@ -30,6 +32,8 @@ class UNET:
         layers_default = self.layers_default
         input_sizex = self.input_sizex
         input_sizey = self.input_sizey
+        mask_sizex = self.mask_sizex
+        mask_sizey = self.mask_sizey
         num_class = self.num_class
 
         with tf.name_scope('input'):

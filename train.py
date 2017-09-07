@@ -33,7 +33,8 @@ train_t = image_t[:num_data]
 test_t = image_t[num_data:num_data + num_test]
 
 #UNETを初期化しています。
-unet = unet.UNET(settings["input_sizex"], settings["input_sizey"], settings["num_class"], depth = settings["depth"], layers_default = settings["layers_default"])
+unet = unet.UNET(settings["input_sizex"], settings["input_sizey"], settings["mask_sizex"], settings["mask_sizex"],
+        settings["num_class"], depth = settings["depth"], layers_default = settings["layers_default"])
 
 Batch_x = batch.Batch(train_x)
 Batch_t = batch.Batch(train_t)

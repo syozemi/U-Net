@@ -7,6 +7,9 @@ num_test: 20
 # 画像の大きさ
 input_sizex: 572
 input_sizey: 572
+# マスクの大きさ
+mask_sizex: 360
+mask_sizey: 360
 # ピクセルが黒か白か
 num_class: 2
 # U-Netの深さ(論文の図の灰色の線の数)
@@ -18,6 +21,6 @@ Batch_num: 20
 # 学習回数
 learning_times: 10000
 # 学習時何割くらいドロップアウトさせるか
-keep_prob: 0.5
+keep_prob: 0.1
 # tensorboardで何枚画像を表示するか
 num_image: 4
