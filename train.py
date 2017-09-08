@@ -35,7 +35,7 @@ test_t = image_t[num_data:num_data + num_test]
 
 #UNETを初期化しています。
 unet = unet.UNET(settings["input_sizex"], settings["input_sizey"],
-        settings["num_class"], depth = settings["depth"], layers_default = settings["layers_default"])
+        settings["num_class"], 3, depth = settings["depth"], layers_default = settings["layers_default"])
 
 Batch_x = batch.Batch(train_x)
 Batch_t = batch.Batch(train_t)
@@ -85,7 +85,7 @@ for i in range(num_image):
     subplot = fig.add_subplot(num_image, 3, i * 3 + 3)
     subplot.set_xticks([])
     subplot.set_yticks([])
-    subplot.imshow(test_x[i,:,:], cmap = 'gray')
+    subplot.imshow(test_x[i,...,0], cmap = 'gray')
 
 plt.savefig("saver/tmp/prediction.png")
 plt.show()

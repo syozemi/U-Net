@@ -56,7 +56,8 @@ def shuffle_data(image_x, image_t):
 
     return [res_x, res_t]
 
-def image_convert(arrays, output_sizex, output_sizey, num_class): #[-1,2]の配列を[-1,output_sizex, output_sizey, num_class]にしてからnum_classの次元を潰す
+def image_convert(arrays, output_sizex, output_sizey, num_class): 
+    #[-1,2]の配列を[-1,output_sizex, output_sizey, num_class]にしてからnum_classの次元を潰す
     images = arrays.reshape(-1, output_sizex, output_sizey, num_class)
     res = np.zeros(images.size).reshape(-1, output_sizex, output_sizey)
     for i in range(len(images)):

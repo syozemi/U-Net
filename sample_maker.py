@@ -32,10 +32,11 @@ num_class = 3
 
 input_sizex = 572
 input_sizey = 572
+colors = 3
 output_sizex = 388
 output_sizey = 388
-train_x = np.random.rand(batch_size * input_sizex * input_sizey).reshape(
-        batch_size, input_sizex, input_sizey)
+train_x = np.random.rand(batch_size * input_sizex * input_sizey * colors).reshape(
+        batch_size, input_sizex, input_sizey, colors)
 
 train_t = np.zeros((batch_size, output_sizex, output_sizey, num_class))
 

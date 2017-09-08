@@ -13,7 +13,7 @@ class UNET:
     #初期化はinput_sizex, input_sizey, num_classは必ず指定、depthとかは"depth ="で行う 
     #input_sizex, input_sizeyを変に設定するとpoolで死ぬ可能性あり。
 
-    def __init__(self, input_sizex , input_sizey, num_class, depth = 4, layers_default = 8, saver_num = -1):
+    def __init__(self, input_sizex , input_sizey, num_class, colors = 1, depth = 4, layers_default = 8, saver_num = -1):
         with tf.Graph().as_default():
 
             self.depth = depth
@@ -22,6 +22,7 @@ class UNET:
             self.input_sizey = input_sizey
             self.num_class = num_class
             self.saver_num = saver_num
+            self.colors = colors
 
             self.prepare_model()
             self.prepare_session()
@@ -35,8 +36,8 @@ class UNET:
 
         with tf.name_scope('input'):
             with tf.device('/gpu:0'):
-                x = tf.placeholder(tf.float32, [None, input_sizex, input_sizey])
-                h_pool = tf.reshape(x, [-1, input_sizex, input_sizey, 1])
+                x = tf.placeholder(tf.float32, [None, input_sizex, input_sizey, self.colors])
+                h_pool = tf.reshape(x, [-1, input_sizex, input_sizey, self.colors])
 
         with tf.name_scope('contracting'):
             layers = layers_default
@@ -49,7 +50,7 @@ class UNET:
 
                 for i in range(depth):
                     if i == 0:
-                        filter1 = get_variable([3, 3, 1, layers])
+                        filter1 = get_variable([3, 3, self.colors, layers])
                     else:
                         filter1 = get_variable([3, 3, layers // 2, layers])
                     h1 = get_conv(h_pool, filter1, 1, 'VALID')
