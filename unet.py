@@ -13,16 +13,15 @@ class UNET:
     #初期化はinput_sizex, input_sizey, num_classは必ず指定、depthとかは"depth ="で行う 
     #input_sizex, input_sizeyを変に設定するとpoolで死ぬ可能性あり。
 
-    def __init__(self, input_sizex , input_sizey, mask_sizex, mask_sizey, num_class, depth = 4, layers_default = 8):
+    def __init__(self, input_sizex , input_sizey, num_class, depth = 4, layers_default = 8, saver_num = -1):
         with tf.Graph().as_default():
 
             self.depth = depth
             self.layers_default = layers_default
             self.input_sizex = input_sizex
             self.input_sizey = input_sizey
-            self.mask_sizex = mask_sizex
-            self.mask_sizey = mask_sizey
             self.num_class = num_class
+            self.saver_num = saver_num
 
             self.prepare_model()
             self.prepare_session()
@@ -32,8 +31,6 @@ class UNET:
         layers_default = self.layers_default
         input_sizex = self.input_sizex
         input_sizey = self.input_sizey
-        mask_sizex = self.mask_sizex
-        mask_sizey = self.mask_sizey
         num_class = self.num_class
 
         with tf.name_scope('input'):
@@ -114,9 +111,8 @@ class UNET:
 
         with tf.name_scope('optimizer'):
             with tf.device('/gpu:1'):
-                    t = tf.placeholder(tf.float32, [None, input_sizex, input_sizey, num_class])
-                    tcrop = get_crop(t, [output_sizex, output_sizey])
-                    tout = tf.reshape(tcrop, [-1, num_class])
+                    t = tf.placeholder(tf.float32, [None, output_sizex, output_sizey, num_class])
+                    tout = tf.reshape(t, [-1, num_class])
                     # loss = -tf.reduce_mean(tout * tf.log(tf.clip_by_value(result, 1e-10, 1.0)))
                     loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=tout,logits=result_logits))
                     train_step = tf.train.MomentumOptimizer(learning_rate = 0.02, momentum = 0.02).minimize(loss)
@@ -145,9 +141,14 @@ class UNET:
         summary = tf.summary.merge_all()
 
         saver = tf.train.Saver()
+        if self.saver_num != -1:
+            saver.restore(sess, 'saver/tmp/unet_session-' + str(self.saver_num))
         if os.path.isdir('/tmp/logs'):
             shutil.rmtree('/tmp/logs')
+        if os.path.isdir('saver/tmp') == False:
+            os.mkdir('saver/tmp')
         writer = tf.summary.FileWriter("/tmp/logs", sess.graph)
+
         
         self.sess = sess
         self.summary = summary

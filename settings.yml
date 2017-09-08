@@ -1,17 +1,14 @@
 # コメント書いたのGsanじゃなくて石部なのでコメント内容間違ってる可能性あり
 # Gsan verify済み
 # 訓練用データ数
-num_data: 300
+num_data: 1
 # テスト用データ数
-num_test: 20
+num_test: 4
 # 画像の大きさ
 input_sizex: 572
 input_sizey: 572
-# マスクの大きさ
-mask_sizex: 360
-mask_sizey: 360
 # ピクセルが黒か白か
-num_class: 2
+num_class: 3
 # U-Netの深さ(論文の図の灰色の線の数)
 depth: 4
 # フィルターの種類の数
@@ -19,8 +16,10 @@ layers_default: 8
 # バッチ数
 Batch_num: 20
 # 学習回数
-learning_times: 10000
+learning_times: 100
 # 学習時何割くらいドロップアウトさせるか
 keep_prob: 0.1
-# tensorboardで何枚画像を表示するか
+# 何枚画像を表示するか
 num_image: 4
+# saverの何番目のモデルを読み込むか
+saver_num: 100

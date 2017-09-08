@@ -25,41 +25,14 @@ image_x, image_t = batch.shuffle_image(image_x, image_t)
 
 #後で消す
 print(len(image_x))
-num_data = settings["num_data"] ##訓練用データ数
 num_test = settings["num_test"]
-train_x = image_x[:num_data]
-test_x = image_x[num_data:num_data + num_test]
-train_t = image_t[:num_data]
-test_t = image_t[num_data:num_data + num_test]
+test_x = image_x[:num_test]
+test_t = image_t[:num_test]
 
 #UNETを初期化しています。
-unet = unet.UNET(settings["input_sizex"], settings["input_sizey"],
-        settings["num_class"], depth = settings["depth"], layers_default = settings["layers_default"])
+unet = unet.UNET(settings["input_sizex"], settings["input_sizey"], settings["num_class"], 
+        depth = settings["depth"], layers_default = settings["layers_default"], saver_num = settings["saver_num"])
 
-Batch_x = batch.Batch(train_x)
-Batch_t = batch.Batch(train_t)
-Batch_num = settings["Batch_num"] ##バッチ数
-
-
-i = 0
-for _ in range(settings["learning_times"]): ##学習回数
-    i += 1
-    batch_x = Batch_x.next_batch(Batch_num)
-    batch_t = Batch_t.next_batch(Batch_num)
-    unet.sess.run(unet.train_step,
-            feed_dict={unet.x:batch_x, unet.t:batch_t, unet.keep_prob:settings["keep_prob"]})
-    if i % 10 == 0:
-        summary, loss_val, acc_val = unet.sess.run([unet.summary, unet.loss, unet.accuracy],
-                feed_dict={unet.x:test_x,
-                           unet.t:test_t,
-                           unet.keep_prob:1.0})
-        print ('Step: %d, Loss: %.12f, Accuracy: %.12f'
-               % (i, loss_val, acc_val))
-
-        if os.path.isdir('saver') == False:
-            os.mkdir('saver')
-        unet.saver.save(unet.sess, os.path.join(os.getcwd(), 'saver/tmp/unet_session'), global_step=i)
-        unet.writer.add_summary(summary, i)
 
 num_image = settings["num_image"]
 output_sizex = unet.output_sizex
@@ -97,5 +70,4 @@ for i in range(num_image):
     subplot.set_yticks([])
     subplot.imshow(test_x[i,:,:], cmap = 'gray')
 
-plt.savefig("saver/tmp/prediction.png")
 plt.show()
