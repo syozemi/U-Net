@@ -7,6 +7,7 @@ import yaml
 
 import batch
 import unet #UNETをimportします
+import libs
 
 # np.random.seed(1919114)
 # tf.set_random_seed(1919114)
@@ -21,7 +22,7 @@ with open('data/train_x', 'rb') as f:
 with open('data/train_t', 'rb') as f:
     image_t = pickle.load(f)
 
-image_x, image_t = batch.shuffle_image(image_x, image_t)
+image_x, image_t = libs.shuffle_data(image_x, image_t)
 
 #後で消す
 print(len(image_x))
@@ -66,21 +67,10 @@ output_sizex = unet.output_sizex
 output_sizey = unet.output_sizey
 num_class = unet.num_class
 
-def image_drawer(arrays): #[-1,2]の配列を[-1,output_sizex, output_sizey, num_class]にしてからnum_classの次元を潰す
-    images = arrays.reshape(-1, output_sizex, output_sizey, num_class)
-    res = np.zeros(images.size).reshape(-1, output_sizex, output_sizey)
-    for i in range(len(images)):
-        for j in range(output_sizex):
-            for k in range(output_sizey):
-                at = np.argmax(images[i][j][k])
-                res[i][j][k] = at / (num_class - 1.0)
-    return res
-
-
 t = np.array(unet.sess.run([unet.tout], feed_dict = {unet.x:test_x, unet.t:test_t, unet.keep_prob:1.0}))
-t_image = image_drawer(t)
+t_image = libs.image_convert(t, output_sizex, output_sizey, num_class)
 result = np.array(unet.sess.run([unet.result], feed_dict = {unet.x:test_x, unet.t:test_t, unet.keep_prob:1.0}))
-result_image = image_drawer(result)
+result_image = libs.image_convert(result, output_sizex, output_sizey, num_class)
 
 fig = plt.figure(figsize = (16, 25))
 for i in range(num_image):
