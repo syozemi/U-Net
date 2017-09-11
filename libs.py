@@ -43,26 +43,3 @@ def conv_and_pool(images, now_filter, next_filter, pixel, shift): #return convol
     h_conv_cutoff = tf.nn.relu(h_conv + b_conv)
     h_pool = get_pool(h_conv_cutoff, 2)
     return [h_conv, h_pool]
-
-def shuffle_data(image_x, image_t):
-    n = image_x.shape[0]
-    perm = np.random.permutation(n)
-    res_x = np.zeros(tuple(image_x.shape))
-    res_t = np.zeros(tuple(image_t.shape))
-    
-    for i in range(n):
-        res_x[i,...] = image_x[perm[i],...]
-        res_t[i,...] = image_t[perm[i],...]
-
-    return [res_x, res_t]
-
-def image_convert(arrays, output_sizex, output_sizey, num_class): 
-    #[-1,2]の配列を[-1,output_sizex, output_sizey, num_class]にしてからnum_classの次元を潰す
-    images = arrays.reshape(-1, output_sizex, output_sizey, num_class)
-    res = np.zeros(images.size).reshape(-1, output_sizex, output_sizey)
-    for i in range(len(images)):
-        for j in range(output_sizex):
-            for k in range(output_sizey):
-                at = np.argmax(images[i][j][k])
-                res[i][j][k] = at / (num_class - 1.0)
-    return res
