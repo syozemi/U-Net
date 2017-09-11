@@ -28,6 +28,7 @@ class UNET:
             self.prepare_session()
 
     def prepare_model(self):
+        loss_prop = 0.1 # ncratioの学習に使う割合
         depth = self.depth
         layers_default = self.layers_default
         input_sizex = self.input_sizex
@@ -109,14 +110,26 @@ class UNET:
                 result_logits = tf.reshape(h_pool, [-1, num_class])
 
                 result = tf.nn.softmax(result_logits)
+                result_image = tf.reshape(result, [-1, output_sizex, output_sizey, num_class])
 
         with tf.name_scope('optimizer'):
             with tf.device('/gpu:1'):
-                    t = tf.placeholder(tf.float32, [None, output_sizex, output_sizey, num_class])
-                    tout = tf.reshape(t, [-1, num_class])
-                    # loss = -tf.reduce_mean(tout * tf.log(tf.clip_by_value(result, 1e-10, 1.0)))
-                    loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=tout,logits=result_logits))
-                    train_step = tf.train.MomentumOptimizer(learning_rate = 0.02, momentum = 0.02).minimize(loss)
+                t = tf.placeholder(tf.float32, [None, output_sizex, output_sizey, num_class])
+                result_max = tf.reshape(tf.reduce_max(result_image, 3), [-1, output_sizex, output_sizey, 1])
+                result_t = tf.cast(tf.equal(result_image, result_max), tf.float32)
+                cell_num = tf.reduce_sum(result_t[...,1], [1, 2])
+                nuc_num = tf.reduce_sum(result_t[...,2], [1, 2])
+                cell_num_correct = tf.reduce_sum(t[...,1], [1, 2])
+                nuc_num_correct = tf.reduce_sum(t[...,2], [1, 2])
+                ncratio_correct = nuc_num_correct / (cell_num_correct + nuc_num_correct + 1e10)
+                ncratio = nuc_num / (cell_num + nuc_num + 1e10)
+
+                tout = tf.reshape(t, [-1, num_class])
+                # loss = -tf.reduce_mean(tout * tf.log(tf.clip_by_value(result, 1e-10, 1.0)))
+                loss1 = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=tout,logits=result_logits))
+                loss2 = tf.reduce_mean(tf.square(ncratio - ncratio_correct))
+                loss = (1.0 - loss_prop) * loss1 + loss_prop * loss2
+                train_step = tf.train.MomentumOptimizer(learning_rate = 0.02, momentum = 0.02).minimize(loss)
 
         with tf.name_scope('evaluator'):
             with tf.device('/gpu:1'):
@@ -125,14 +138,22 @@ class UNET:
 
         tf.summary.scalar("loss", loss)
         tf.summary.scalar("accuracy", accuracy)
-        # tf.summary.histogram("result", result[...,1])
+        tf.summary.histogram("result", result[...,1])
         
         self.x, self.t, self.result, self.keep_prob = x, t, result, keep_prob
         self.train_step = train_step
         self.loss = loss
         self.tout = tout
         self.result = result
+        self.loss1 = loss1
+        self.loss2 = loss2
+
+        result_t = tf.image.resize_images(result_t, [input_sizex, input_sizey])
+        self.result_t = result_t
+
         self.accuracy = accuracy
+        self.ncratio_correct = ncratio_correct
+        self.ncratio = ncratio
         self.output_sizex = output_sizex
         self.output_sizey = output_sizey
 
@@ -144,8 +165,6 @@ class UNET:
         saver = tf.train.Saver()
         if self.saver_num != -1:
             saver.restore(sess, 'saver/tmp/unet_session-' + str(self.saver_num))
-        if os.path.isdir('/tmp/logs'):
-            shutil.rmtree('/tmp/logs')
         if os.path.isdir('saver/tmp') == False:
             os.mkdir('saver/tmp')
         writer = tf.summary.FileWriter("/tmp/logs", sess.graph)

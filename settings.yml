@@ -1,9 +1,9 @@
 # コメント書いたのGsanじゃなくて石部なのでコメント内容間違ってる可能性あり
 # Gsan verify済み
 # 訓練用データ数
-num_data: 1
+num_data: 50
 # テスト用データ数
-num_test: 4
+num_test: 50
 # 画像の大きさ
 input_sizex: 572
 input_sizey: 572
@@ -16,7 +16,7 @@ layers_default: 8
 # バッチ数
 Batch_num: 20
 # 学習回数
-learning_times: 100
+learning_times: 1000
 # 学習時何割くらいドロップアウトさせるか
 keep_prob: 0.1
 # 何枚画像を表示するか
