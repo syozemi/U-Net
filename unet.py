@@ -28,7 +28,7 @@ class UNET:
             self.prepare_session()
 
     def prepare_model(self):
-        loss_prop = 0.1 # ncratioの学習に使う割合
+        loss_prop = 0 # ncratioの学習に使う割合
         depth = self.depth
         layers_default = self.layers_default
         input_sizex = self.input_sizex
@@ -121,8 +121,8 @@ class UNET:
                 nuc_num = tf.reduce_sum(result_t[...,2], [1, 2])
                 cell_num_correct = tf.reduce_sum(t[...,1], [1, 2])
                 nuc_num_correct = tf.reduce_sum(t[...,2], [1, 2])
-                ncratio_correct = nuc_num_correct / (cell_num_correct + nuc_num_correct + 1e10)
-                ncratio = nuc_num / (cell_num + nuc_num + 1e10)
+                ncratio_correct = nuc_num_correct / (cell_num_correct + nuc_num_correct + 1e-6)
+                ncratio = nuc_num / (cell_num + nuc_num + 1e-6)
 
                 tout = tf.reshape(t, [-1, num_class])
                 # loss = -tf.reduce_mean(tout * tf.log(tf.clip_by_value(result, 1e-10, 1.0)))

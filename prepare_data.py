@@ -1,174 +1,82 @@
-import numpy as np
-import matplotlib.pyplot as plt
-import pickle
 import os
-import process_data as processer
+import numpy as np
+import process_data as pro
+import pickle
+import matplotlib.pyplot as plt
+import random
+import cv2 as cv
 
-if not os.path.exists('band'):
-    print('no band')
+
+if not os.path.exists('data'):
+    os.mkdir('data')
 else:
-    if os.path.exists('data'):
-        pass
-    else:
-        os.mkdir('data')
+    pass
 
-    image = []
-    cell = []
-    nucleus = []
+folders = os.listdir('cell_data/image')
 
-    files = os.listdir('band/')
+for folder in folders:
+    try:
+        image,image572,image572m,mask,tmask,maskm,ncratio,ncratio_num,ncratio_,ncratio_num_ = [],[],[],[],[],[],[],[],[],[]
+        files = os.listdir('cell_data/image/%s' % folder)
+        for i,file in enumerate(files):
 
-    for file in files:
-        if '.jpg' in file:
-            image_path = 'band/' + file
-            cell_path = 'band/' + file.replace('.jpg', '.mask.0.png')
-            nucleus_path = 'band/' + file.replace('.jpg', '.mask.1.png')
+            #画像のパス
+            image_path = 'cell_data/image/%s/%s' % (folder,file)
+            cell_path = 'cell_data/mask/%s/%s' % (folder,file.replace('.jpg', '.mask.0.png'))
+            nucleus_path = 'cell_data/mask/%s/%s' % (folder,file.replace('.jpg', '.mask.1.png'))
 
-            image_array = processer.img_to_np(image_path)
-            cell_array = processer.img_to_np(cell_path)
-            nucleus_array = processer.img_to_np(nucleus_path)
-            image_array = image_array[3:,:,:]
-            cell_array = cell_array[3:,:,:]
-            nucleus_array = nucleus_array[3:,:,:]
+            #画像を360*360の行列として取得する
+            image_array = cv.imread(image_path,0)[3:,:] / 255
+            cell_array,nucleus_array = [cv.imread(x)[3:,:,2]/255 for x in [cell_path,nucleus_path]]
+
+            #拡大
+            image_array_572 = cv.resize(image_array, (572,572))
+            #image_array_572m = pro.mirror(image_array, 572)
+
+            #細胞と核のマスクから、ラベルを作る
+            cell_array,nucleus_array = [cv.resize(x,(388,388)) for x in [cell_array,nucleus_array]]
+            mask_array = pro.create_mask_label(cell_array, nucleus_array)
+            tmask_array = pro.create_torch_mask_label(cell_array,nucleus_array)
+            #cell_array_m,nucleus_array_m = [pro.mirror(x,388) for x in [cell_array,nucleus_array]]
+            #mask_array_m = pro.create_mask_label(cell_array_m, nucleus_array_m)
+
+            #nc比を作る
+            c,n = [np.sum(x) for x in [cell_array,nucleus_array]]
+            nc = int((n/c)//0.1)
+            nc_ = int((n/c)//0.01)
+            ncl = [0.]*10
+            ncl_ = [0.]*100
+            ncl[nc] = 1.
+            ncl_[nc_] = 1.
 
             image.append(image_array)
-            cell.append(cell_array)
-            nucleus.append(nucleus_array)
+            mask.append(mask_array)
+            tmask.append(tmask_array)
+            #maskm.append(mask_array_m)
+            ncratio.append(ncl)
+            ncratio_.append(ncl_)
+            ncratio_num.append(nc)
+            ncratio_num_.append(nc_)
+            image572.append(image_array_572)
+            #image572m.append(image_array_572m)
 
-        else:
-            pass
-
-    image = np.array(image)
-    cell = np.array(cell)
-    nucleus = np.array(nucleus)
-
-    image = processer.rgb2gray_array(image)
-
-    image_ = []
-    for x in image:
-        for y in processer.rotate_and_inverte(x):
-            image_.append(y)
-    image_ = np.array(image_)
-
-    image572 = []
-    for x in image:
-        y = processer.mirror(x, 572)
-        image572.append(y)
-    image572 = np.array(image572)
-    with open('data/image572', 'wb') as f:
-        pickle.dump(image572, f)
-
-    with open('data/image', 'wb') as f:
-        pickle.dump(image, f)
-
-    # with open('data/image_', 'wb') as f:
-    #     pickle.dump(image_, f)
-
-    cell = cell[:, :, :, 0]
-    nucleus = nucleus[:, :, :, 0]
-    ncratio = []
-
-    for i in range(len(cell)):
-        cell_sum = np.sum(cell[i])
-        nucleus_sum = np.sum(nucleus[i])
-        ncratio.append(nucleus_sum / cell_sum)
-
-    ncratio = np.array(ncratio)
-
-    with open('data/cell', 'wb') as f:
-        pickle.dump(cell, f)
-    with open('data/nucleus', 'wb') as f:
-        pickle.dump(nucleus, f)
-    with open('data/ncratio', 'wb') as f:
-        pickle.dump(ncratio, f)
+            print(i,'\r',end='')
+        image,image572,image572m,mask,tmask,maskm,ncratio,ncratio_,ncratio_num,ncratio_num_ = [np.array(x) for x in [image,image572,image572m,mask,tmask,maskm,ncratio,ncratio_,ncratio_num,ncratio_num_]]
+        pro.save(image,'data/%s' % folder, 'image360')
+        pro.save(image572,'data/%s' % folder, 'image572')
+        #pro.save(image572m, 'data/%s' % folder, 'image572m')
+        pro.save(mask,'data/%s' % folder, 'mask')
+        pro.save(tmask, 'data/%s' % folder, 'tmask')
+        #pro.save(maskm, 'data/%s' % folder, 'maskm')
+        pro.save(ncratio,'data/%s' % folder, 'ncratio10')
+        pro.save(ncratio_, 'data/%s' % folder, 'ncratio100')
+        pro.save(ncratio_num, 'data/%s' % folder, 'ncratio_num10')
+        pro.save(ncratio_num_, 'data/%s' % folder, 'ncratio_num100')   
+        print(folder + ' done')
+    except:
+        print('unable to process ' + folder)
 
 
-    ncratio10 = []
-    ncratio100 = []
-
-    for x in ncratio:
-        i10 = int(x // 0.1)
-        i100 = int(x // 0.01)
-        nc10l = [0]*10
-        nc100l = [0]*100
-        nc10l[i10] += 1
-        nc100l[i100] += 1
-        ncratio10.append(nc10l)
-        ncratio100.append(nc100l)
-
-    ncratio10 = np.array(ncratio10)
-    ncratio100 = np.array(ncratio100)
-
-    with open('data/ncratio10', 'wb') as f:
-        pickle.dump(ncratio10, f)
-    with open('data/ncratio100', 'wb') as f:
-        pickle.dump(ncratio100, f)
 
 
-    # ncratio_ = []
-    # ncratio10_ = []
-    # ncratio100_ = []
-    #
-    # for x in ncratio:
-    #     for _ in range(8):
-    #         ncratio_.append(x)
-    #
-    # for x in ncratio10:
-    #     for _ in range(8):
-    #         ncratio10_.append(x)
-    #
-    # for x in ncratio100:
-    #     for _ in range(8):
-    #         ncratio100_.append(x)
-    #
-    # ncratio_ = np.array(ncratio_)
-    # ncratio10_ = np.array(ncratio10_)
-    # ncratio100_ = np.array(ncratio100_)
-    #
-    # with open('data/ncratio_', 'wb') as f:
-    #     pickle.dump(ncratio_, f)
-    # with open('data/ncratio10_', 'wb') as f:
-    #     pickle.dump(ncratio10_, f)
-    # with open('data/ncratio100_', 'wb') as f:
-    #     pickle.dump(ncratio100_, f)
 
-    cell_label = []
-    nucleus_label = []
-
-    for x in cell:
-        x_ = processer.mirror(x, 572)
-        l = []
-        for y in x_:
-            for z in y:
-                if z == 0.:
-                    w = [1.,0.]
-                else:
-                    w = [0.,1.]
-                l.append(w)
-        l = np.array(l).reshape(572,572,2)
-
-        cell_label.append(l)
-
-    cell_label = np.array(cell_label)
-
-    with open('data/cell_label', 'wb') as f:
-        pickle.dump(cell_label, f)
-
-    for x in nucleus:
-        x_ = processer.mirror(x, 572)
-        l = []
-        for y in x_:
-            for z in y:
-                if z == 0.:
-                    w = [1.,0.]
-                else:
-                    w = [0.,1.]
-                l.append(w)
-        l = np.array(l).reshape(572,572,2)
-
-        nucleus_label.append(l)
-
-    nucleus_label = np.array(nucleus_label)
-
-    with open('data/nucleus_label', 'wb') as f:
-        pickle.dump(nucleus_label, f)

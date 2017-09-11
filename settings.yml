@@ -16,7 +16,7 @@ layers_default: 8
 # バッチ数
 Batch_num: 20
 # 学習回数
-learning_times: 1000
+learning_times: 100
 # 学習時何割くらいドロップアウトさせるか
 keep_prob: 0.1
 # 何枚画像を表示するか

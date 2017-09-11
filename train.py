@@ -47,12 +47,13 @@ for _ in range(settings["learning_times"]): ##学習回数
     unet1.sess.run(unet1.train_step,
             feed_dict={unet1.x:batch_x, unet1.t:batch_t, unet1.keep_prob:settings["keep_prob"]})
     if i % 10 == 0:
-        summary, loss_val, acc_val, loss1, loss2= unet1.sess.run([unet1.summary, unet1.loss, unet1.accuracy, unet1.loss1, unet1.loss2],
+        summary, loss_val, acc_val, loss1, loss2, ncratio_correct, ncratio = unet1.sess.run([unet1.summary, unet1.loss, unet1.accuracy, unet1.loss1, unet1.loss2, unet1.ncratio_correct, unet1.ncratio],
                 feed_dict={unet1.x:test_x,
                            unet1.t:test_t,
                            unet1.keep_prob:1.0})
         print ('Step: %d, Loss: %.12f, Accuracy: %.12f, Loss1: %.12f, Loss2: %.12f'
                % (i, loss_val, acc_val, loss1, loss2))
+        print (ncratio[0], ncratio_correct[0])
         if os.path.isdir('saver') == False:
             os.mkdir('saver')
         unet1.saver.save(unet1.sess, os.path.join(os.getcwd(), 'saver/tmp/unet1_session'), global_step=i)
@@ -83,12 +84,13 @@ for _ in range(settings["learning_times"]): ##学習回数
     unet2.sess.run(unet2.train_step,
             feed_dict={unet2.x:batch_x, unet2.t:batch_t, unet2.keep_prob:settings["keep_prob"]})
     if i % 10 == 0:
-        summary, loss_val, acc_val, loss1, loss2 = unet2.sess.run([unet2.summary, unet2.loss, unet2.accuracy, unet2.loss1, unet2.loss2],
+        summary, loss_val, acc_val, loss1, loss2, ncratio_correct, ncratio = unet2.sess.run([unet2.summary, unet2.loss, unet2.accuracy, unet2.loss1, unet2.loss2, unet2.ncratio_correct, unet2.ncratio],
                 feed_dict={unet2.x:test_x,
                            unet2.t:test_t,
                            unet2.keep_prob:1.0})
         print ('Step: %d, Loss: %.12f, Accuracy: %.12f, Loss1: %.12f, Loss2: %.12f'
                % (i, loss_val, acc_val, loss1, loss2))
+        print (ncratio[0], ncratio_correct[0])
         if os.path.isdir('saver') == False:
             os.mkdir('saver')
         unet2.saver.save(unet2.sess, os.path.join(os.getcwd(), 'saver/tmp/unet2_session'), global_step=i)
