@@ -28,7 +28,8 @@ class UNET:
             self.prepare_session()
 
     def prepare_model(self):
-        loss_prop = 0 # ncratioの学習に使う割合
+        loss2_const = 100
+        loss_prop = 0.0 # ncratioの学習に使う割合
         depth = self.depth
         layers_default = self.layers_default
         input_sizex = self.input_sizex
@@ -115,7 +116,7 @@ class UNET:
         with tf.name_scope('optimizer'):
             with tf.device('/gpu:1'):
                 t = tf.placeholder(tf.float32, [None, output_sizex, output_sizey, num_class])
-                result_max = tf.reshape(tf.reduce_max(result_image, 3), [-1, output_sizex, output_sizey, 1])
+                result_max = tf.reshape(tf.reduce_max(result_image, num_class), [-1, output_sizex, output_sizey, 1])
                 result_t = tf.cast(tf.equal(result_image, result_max), tf.float32)
                 cell_num = tf.reduce_sum(result_t[...,1], [1, 2])
                 nuc_num = tf.reduce_sum(result_t[...,2], [1, 2])
@@ -127,7 +128,7 @@ class UNET:
                 tout = tf.reshape(t, [-1, num_class])
                 # loss = -tf.reduce_mean(tout * tf.log(tf.clip_by_value(result, 1e-10, 1.0)))
                 loss1 = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=tout,logits=result_logits))
-                loss2 = tf.reduce_mean(tf.square(ncratio - ncratio_correct))
+                loss2 = tf.reduce_mean(tf.square(ncratio - ncratio_correct)) * loss2_const
                 loss = (1.0 - loss_prop) * loss1 + loss_prop * loss2
                 train_step = tf.train.MomentumOptimizer(learning_rate = 0.02, momentum = 0.02).minimize(loss)
 
@@ -138,7 +139,7 @@ class UNET:
 
         tf.summary.scalar("loss", loss)
         tf.summary.scalar("accuracy", accuracy)
-        tf.summary.histogram("result", result[...,1])
+        # tf.summary.histogram("result", result[...,1])
         
         self.x, self.t, self.result, self.keep_prob = x, t, result, keep_prob
         self.train_step = train_step
